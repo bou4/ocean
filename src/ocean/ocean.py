@@ -4,23 +4,53 @@ Python interface to the Open Command Environment for Analysis (OCEAN).
 OCEAN lets you set up, simulate, and analyze circuit data without starting
 Virtuoso Analog Design Environment L, XL or GXL.
 """
-from skillbridge import Workspace, Symbol
+from skillbridge import Workspace, Symbol, Key, Var
 from enum import Enum
 
 # TODO: Make the user configure the workspace
 ws = Workspace.open()
+ws['load']('abWaveToList.il')
 
 
 class _SymbolEnum(Enum):
     def __repr_skill__(self):
         return self.value.__repr_skill__()
 
+
+class Waveform:
+    """Waveform."""
+    def __init__(self, waveform) -> None:
+        self.waveform = waveform
+
+    def __add__(self, other: 'Waveform') -> 'Waveform':
+        return Waveform(ws['plus'](self.waveform, other.waveform))
+
+    def __sub__(self, other: 'Waveform') -> 'Waveform':
+        return Waveform(ws['plus'](self.waveform, ws['minus'](other.waveform)))
+
+    def pull(self) -> tuple[list[float], list[float]]:
+        """Pull the waveform for further processing in the local environment.
+
+        Args:
+            waveform: The waveform to pull.
+
+        Returns:
+            Tuple containing the x and y values of the waveform.
+        """
+        x, y = ws['abWaveToList'](self.waveform, transpose=True)
+
+        return x, y
+
+
 # ------------------------------------------------------------------------------
 # 1. OCEAN Environment Commands
+# The following OCEAN environment commands let you start, control, and quit the OCEAN environment.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # 2. Simulation commands
+#
+# The following OCEAN simulation commands let you set up and run your simulation.
 # ------------------------------------------------------------------------------
 
 
@@ -53,6 +83,43 @@ class SaveType(_SymbolEnum):
     all = Symbol('all')
     allv = Symbol('allv')
     alli = Symbol('alli')
+
+
+class AnalysisType(_SymbolEnum):
+    """Analysis Types."""
+    pz = Symbol('pz')
+    lf = Symbol('lf')
+    acmatch = Symbol('acmatch')
+    dcmatch = Symbol('dcmatch')
+    stb = Symbol('stb')
+    tran = Symbol('tran')
+    envlp = Symbol('envlp')
+    ac = Symbol('ac')
+    dc = Symbol('dc')
+    noise = Symbol('noise')
+    xf = Symbol('xf')
+    sp = Symbol('sp')
+    pss = Symbol('pss')
+    pac = Symbol('pac')
+    pstb = Symbol('pstb')
+    pnoise = Symbol('pnoise')
+    pxf = Symbol('pxf')
+    psp = Symbol('psp')
+    qpss = Symbol('qpss')
+    qpac = Symbol('qpac')
+    qpnoise = Symbol('qpnoise')
+    qpxf = Symbol('qpxf')
+    qpsp = Symbol('qpsp')
+    hb = Symbol('hb')
+    hbac = Symbol('hbac')
+    hbstb = Symbol('hbstb')
+    hbnoise = Symbol('hbnoise')
+    hbxf = Symbol('hbxf')
+    hbsp = Symbol('hbsp')
+    sens = Symbol('sens')
+    include = Symbol('include')
+    gnt = Symbol('gnt')
+    custom = Symbol('custom')
 
 
 def simulator(sim: Simulator) -> Simulator:
@@ -172,7 +239,7 @@ def save(save_type: SaveType = None, names: list[str] = None, category: Category
     want. If you want to turn off the default of save, `allv, use the delete(`save )
     command.
 
-    Arguments:
+    Args:
         save_type:
             Type of outputs to be saved.
             The value can be any member of :class:`SaveType`.
@@ -183,21 +250,14 @@ def save(save_type: SaveType = None, names: list[str] = None, category: Category
             Type of simulator to be used.
             The value can be any member of :class:`Category`.
             The default category is :attr:`Category.analog`.
-    
+
     Returns:
-        TODO
+        TODO: Write the 'Returns' part of the save function documentation.
     """
-    class Keyword:
-        def __init__(self, name: str) -> None:
-            self.name = name
-
-        def __repr_skill__(self) -> str:
-            return f'?{self.name}'
-
     args = []
 
     if category is not None:
-        args.append(Keyword('categ'))
+        args.append(Key('categ'))
         args.append(category)
 
     if save_type is not None:
@@ -206,7 +266,113 @@ def save(save_type: SaveType = None, names: list[str] = None, category: Category
     if names is not None:
         args += names
 
-    return ws['save'](*args)
+    ret = ws['save'](*args)
+
+    if isinstance(ret, list):
+        if all(isinstance(x, Symbol) for x in ret):
+            return [SaveType(x) for x in ret]
+    else:
+        if isinstance(ret, Symbol):
+            return SaveType(ret)
+
+    return ret
+
+
+def analysis(analysis_type: AnalysisType, **kwargs) -> None:
+    """Specifies the analysis to be simulated.
+
+    You can include as many analysis options as you want.
+    Analysis options vary, depending on the simulator you are using.
+    To include an analysis option, include the corresponding keyword argument.
+    If you have an AC analysis, the first option/value pair might be `from=0`.
+
+    Note: Some simplified commands are available for basic SPICE analyses.
+    See the :func:`ac`, :func:`dc`, :func:`tran`, and :func:`noise` functions.
+
+    TODO: Implement ac, dc, tran, and noise functions.
+
+    Args:
+        analysis_type:
+            Type of the analysis.
+            The value can be any member of :class:`AnalysisType`, but not all members can be used with any simulator.
+        **kwargs: Analysis options.
+    """
+    return ws['analysis'](analysis_type, **kwargs)
+
+
+def run() -> None:
+    """TODO: Extend run
+    """
+    return ws['run']()
+
+
+# ------------------------------------------------------------------------------
+# 3. Data Access Commands
+#
+# The data access commands let you open results and select different types of results to analyze.
+# You can get the names and values of signals and components in the selected results, and you can print different types of reports.
+# ------------------------------------------------------------------------------
+
+def select_result(results_name: AnalysisType, sweep_value: float | int = None) -> None:
+    """Selects the results from a particular analysis whose data you want to examine.
+
+    The argument that you supply to this command is a data type representing the particular type of analysis results you want.
+    All subsequent data access commands use the information specified with :func:`select_result`.
+
+    Args:
+        results_name: Results from an analysis.
+        sweep_value: The sweep value you wish to select for an analysis.
+
+    Returns:
+        The object representing the selected results.
+    """
+    if sweep_value is None:
+        return ws['selectResult'](results_name)
+    else:
+        return ws['selectResult'](results_name, sweep_value)
+
+
+def get_data(name: str, result_name: AnalysisType = None, results_directory: str = None) -> float | Waveform:
+    """Returns the number or waveform for the signal name specified.
+
+    The type of value returned depends on how the command is used.
+
+    Args:
+        name: Name of the signal.
+        result_name:
+            Results from an analysis.
+            When specified, this argument will only be used internally and will not alter the current result which was set by :func:`select_result`.
+            The default is the current result selected with :func:`select_result`.
+        results_directory:
+            Directory containing the PSF files (results).
+            If you supply this argument, you must also supply the `result_name` argument.
+            When specified, this argument will only be used internally and will not alter the current results directory which was set by :func:`open_results`.
+            The default is the current results directory set by :func:`open_results`.
+    Returns:
+        The integer simulation result or a waveform object.
+        A waveform object represents simulation results that can be displayed as a series of points on a grid.
+
+    TODO: Implement open_results().
+    """
+    args = [name]
+
+    if result_name is not None:
+        args.append(result_name)
+
+        if results_directory is not None:
+            args.append(results_directory)
+
+    ret = ws['getData'](*args)
+
+    # An error has occurred
+    if ret is None:
+        raise ValueError()
+
+    # TODO: Check if getData() ever returns an integer
+    if isinstance(ret, float):
+        return ret
+    else:
+        return Waveform(ret)
 
 
 if __name__ == "__main__":
