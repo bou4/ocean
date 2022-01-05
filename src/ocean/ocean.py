@@ -4,8 +4,10 @@ Python interface to the Open Command Environment for Analysis (OCEAN).
 OCEAN lets you set up, simulate, and analyze circuit data without starting
 Virtuoso Analog Design Environment L, XL or GXL.
 """
+from typing import Union
 from skillbridge import Workspace, Symbol, Key, Var
 from enum import Enum
+import numpy as np
 
 # TODO: Make the user configure the workspace
 ws = Workspace.open()
@@ -22,24 +24,30 @@ class Waveform:
     def __init__(self, waveform) -> None:
         self.waveform = waveform
 
-    def __add__(self, other: 'Waveform') -> 'Waveform':
-        return Waveform(ws['plus'](self.waveform, other.waveform))
+    def __add__(self, other: Union[float, 'Waveform']) -> 'Waveform':
+        return Waveform(ws['plus'](self, other))
 
-    def __sub__(self, other: 'Waveform') -> 'Waveform':
-        return Waveform(ws['plus'](self.waveform, ws['minus'](other.waveform)))
+    def __sub__(self, other: Union[float, 'Waveform']) -> 'Waveform':
+        return Waveform(ws['plus'](self, ws['minus'](other)))
 
-    def pull(self) -> tuple[list[float], list[float]]:
+    def __truediv__(self, other: Union[float, 'Waveform']) -> 'Waveform':
+        return Waveform(ws['quotient'](self, other))
+
+    def __repr_skill__(self):
+        return self.waveform.__repr_skill__()
+
+    def pull(self) -> np.ndarray:
         """Pull the waveform for further processing in the local environment.
 
         Args:
             waveform: The waveform to pull.
 
         Returns:
-            Tuple containing the x and y values of the waveform.
+            Numpy array containing the x and y values of the waveform.
         """
         x, y = ws['abWaveToList'](self.waveform, transpose=True)
 
-        return x, y
+        return np.array((x, y))
 
 
 # ------------------------------------------------------------------------------
@@ -53,9 +61,8 @@ class Waveform:
 # The following OCEAN simulation commands let you set up and run your simulation.
 # ------------------------------------------------------------------------------
 
-
 class Simulator(_SymbolEnum):
-    """Simulator."""
+    """Simulator"""
     ADSsim = Symbol('ADSsim')
     ams = Symbol('ams')
     hspiceD = Symbol('hspiceD')
@@ -64,20 +71,20 @@ class Simulator(_SymbolEnum):
 
 
 class Mode(_SymbolEnum):
-    """Mode."""
+    """Mode"""
     read = Symbol('r')
     write = Symbol('w')
     append = Symbol('a')
 
 
 class Category(_SymbolEnum):
-    """Category."""
+    """Category"""
     analog = Symbol('analog')
     digital = Symbol('digital')
 
 
 class SaveType(_SymbolEnum):
-    """Save Types."""
+    """Save Type"""
     v = Symbol('v')
     i = Symbol('i')
     all = Symbol('all')
@@ -86,7 +93,7 @@ class SaveType(_SymbolEnum):
 
 
 class AnalysisType(_SymbolEnum):
-    """Analysis Types."""
+    """Analysis Type"""
     pz = Symbol('pz')
     lf = Symbol('lf')
     acmatch = Symbol('acmatch')
@@ -373,6 +380,26 @@ def get_data(name: str, result_name: AnalysisType = None, results_directory: str
         return ret
     else:
         return Waveform(ret)
+
+# ------------------------------------------------------------------------------
+# 6. Predefined and Waveform (Calculator) Functions
+# ------------------------------------------------------------------------------
+
+def deriv(waveform : Waveform) -> Waveform:
+    """Computes the derivative of a waveform with respect to the X axis.
+
+    Note the following:
+    - After the second derivative, the results become inaccurate because the derivative is obtained numerically.
+    - Use the magnitude value instead of dB in frequency domain.
+
+    Args:
+        waveform: Waveform object representing simulation results that can be displayed as a series of points on a grid.
+    
+    Returns:
+        A waveform object representing the derivative with respect to the X axis of the input waveform.
+        Returns a family of waveforms if the input argument is a family of waveforms.
+    """
+    return Waveform(ws['deriv'](waveform))
 
 
 if __name__ == "__main__":
