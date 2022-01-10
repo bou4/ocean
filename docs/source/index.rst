@@ -1,15 +1,9 @@
 Welcome to Ocean's documentation!
 =================================
 
-.. automodule:: ocean.ocean
-   :members:
-   :undoc-members:
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
-
 
 Indices and tables
 ==================
