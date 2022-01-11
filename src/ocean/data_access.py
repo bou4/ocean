@@ -1,5 +1,6 @@
 from ocean.workspace import ws
-from ocean.utils import Symbol
+from ocean.waveform import RemoteWaveform
+from ocean.symbol import *
 
 
 def data_types():
@@ -41,31 +42,49 @@ def display_subckt():
     raise NotImplementedError
 
 
-def get_data():
+def get_data(name: str, result_name: AnalysisType = None, results_directory: str = None) -> float | RemoteWaveform:
     """Returns the number or waveform for the signal name specified.
 
+    The type of value returned depends on how the command is used.
+
     Args:
-        name: Name of the signal
-        result_name:
+        name (str): Name of the signal
+        result_name (AnalysisType, optional):
             Results from an analysis.
-            When specified, this argument will only be used internally and will not alter the current result which was set by the selectResult command.
-            The default is the current result selected with the selectResult command.
-        results_dir:
+            When specified, this argument will only be used internally and will not alter the current result which was set by the :func:`select_result()` command.
+            The default is the current result selected with the :func:`select_result()` command.
+        results_dir (str, optional):
             Directory containing the PSF files (results).
-            If you supply this argument, you must also supply the resultName argument.
-            When specified, this argument will only be used internally and will not alter the current results directory which was set by the openResults command.
-            The default is the current results directory set by the openResults command.
+            If you supply this argument, you must also supply the `result_name` argument.
+            When specified, this argument will only be used internally and will not alter the current results directory which was set by the :func:`open_results()` command.
+            The default is the current results directory set by the :func:`open_results()` command.
 
     Returns:
-        number: Returns an integer simulation result
-        waveform:
-            Returns a waveform object.
-            A waveform object represents simulation results that can be displayed as a series of points on a grid.
-            (A waveform object identifier looks like this: srrWave:XXXXX.
-            ).
-        nil: Returns nil and an error message if the value cannot be returned
+        float | RemoteWaveform: 
+            An integer simulation result or a :obj:`RemoteWaveform` object.
+            A :obj:`RemoteWaveform` object represents simulation results that can be displayed as a series of points on a grid.
+            (A waveform object identifier looks like this: srrWave:XXXXX.).
+    
+    Raises:
+        ValueError: The value cannot be returned.
     """
-    raise NotImplementedError
+    args = [name]
+
+    if result_name is not None:
+        args.append(result_name)
+
+        if results_directory is not None:
+            args.append(results_directory)
+
+    ret = ws['getData'](*args)
+
+    if ret is None:
+        raise ValueError('The value cannot be returned.')
+
+    if isinstance(ret, float):
+        return ret
+    else:
+        return RemoteWaveform(ret)
 
 
 def get_result():
@@ -148,7 +167,7 @@ def ocn_reset_results():
     raise NotImplementedError
 
 
-def open_results(arg = None, enable_calc_expressions: bool = None):
+def open_results(arg: str | Symbol = None, enable_calc_expressions: bool = None) -> str:
     """Refer to the documentation of :func:`open_job()`, and :func:`open_dir()`.
 
     All function signatures can be used when calling :func:`open_results()`.
@@ -170,7 +189,7 @@ def open_results(arg = None, enable_calc_expressions: bool = None):
 
 def open_query() -> str:
     """Queries the directory for the results that are currently open.
-    
+
     Returns:
         str: The directory for the results that are currently open.
 
@@ -181,23 +200,23 @@ def open_query() -> str:
 
     if ret is None:
         raise ValueError('There are problems opening the results.')
-    
+
     return ret
 
 
-def open_job(job_name) -> str:
+def open_job(job_name: Symbol) -> str:
     """Opens the results from a specified job.
 
-    A job name is defined when a :func:`run` is issued.
+    A job name is defined when a :func:`run()` is issued.
 
     Args:
-        job_name:
+        job_name (Symbol):
             The name of a distributed process job.
             `job_name` is a job name and is defined when a run command is issued.
 
     Returns:
-        dir_name: The directory containing the PSF files.
-    
+        str: The directory containing the PSF files.
+
     Raises:
         ValueError: There are problems opening the results.
     """
@@ -205,11 +224,11 @@ def open_job(job_name) -> str:
 
     if ret is None:
         raise ValueError('There are problems opening the results.')
-    
+
     return ret
 
 
-def open_dir(dir_name, enable_calc_expressions: bool = True) -> str:
+def open_dir(dir_name: str, enable_calc_expressions: bool = True) -> str:
     """Opens simulation results stored in PSF files.
 
     The results must have been created by a previous simulation run through OCEAN or the Virtuoso® Analog Design Environment.
@@ -218,14 +237,14 @@ def open_dir(dir_name, enable_calc_expressions: bool = True) -> str:
     Otherwise, only `logFile` is created.
 
     Args:
-        dir_name: The directory containing the PSF files
-        enable_calc_expressions:
+        dir_name (str): The directory containing the PSF files
+        enable_calc_expressions (bool, optional):
             An optional argument, which when set to True, allows the evaluation of Calculator expressions.
             For this argument to work, the directory mentioned in `dir_name` must be a psf directory and must contain `runObjFile`.
             The default value for this argument is True.
 
     Returns:
-        dir_name: The directory containing the PSF files
+        str: The directory containing the PSF files
 
     Raises:
         ValueError: There are problems opening the results.
@@ -234,7 +253,7 @@ def open_dir(dir_name, enable_calc_expressions: bool = True) -> str:
 
     if ret is None:
         raise ValueError('There are problems opening the results.')
-    
+
     return ret
 
 
@@ -406,18 +425,31 @@ def save_subckt():
     raise NotImplementedError
 
 
-def select_result():
+def select_result(results_name: AnalysisType, sweep_value: float | int = None) -> None:
     """Selects the results from a particular analysis whose data you want to examine.
 
+    The argument that you supply to this command is a data type representing the particular type of analysis results you want.
+    All subsequent data access commands use the information specified with :func:`select_result`.
+
     Args:
-        results_name: Results from an analysis
-        sweep_value: The sweep value you wish to select for an analysis
+        results_name (AnalysisType): Results from an analysis
+        sweep_value (float | int, optional): The sweep value you wish to select for an analysis
 
     Returns:
-        results: Returns the object representing the selected results
-        nil: Returns nil and an error message if there are problems selecting the analysis
+        The object representing the selected results
+
+    Raises
+        ValueError: There are problems selecting the analysis.
     """
-    raise NotImplementedError
+    if sweep_value is None:
+        ret = ws['selectResult'](results_name)
+    else:
+        ret = ws['selectResult'](results_name, sweep_value)
+
+    if ret is None:
+        raise ValueError('There are problems selecting the analysis.')
+
+    return ret
 
 
 def sp():

@@ -52,10 +52,10 @@ ocean.simulation module
    :undoc-members:
    :show-inheritance:
 
-ocean.utils module
-------------------
+ocean.symbol module
+-------------------
 
-.. automodule:: ocean.utils
+.. automodule:: ocean.symbol
    :members:
    :undoc-members:
    :show-inheritance:

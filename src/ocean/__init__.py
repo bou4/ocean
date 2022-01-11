@@ -16,4 +16,4 @@ from ocean.simulation import *
 # Utilities
 from ocean.workspace import *
 from ocean.waveform import *
-from ocean.utils import *
+from ocean.symbol import *
