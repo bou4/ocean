@@ -1,129 +1,97 @@
-def param_analysis():
+from ocean.workspace import ws
+
+
+def param_analysis(des_var: str, param_analysis_ret: None = None, **kwargs) -> None:
     """Sets up a parametric analysis.
 
     Args:
         des_var: Name of the design variable to be swept
+        param_analysis_ret: Value returned from another :func:`param_analysis()` call used to achieve multidimensional parametric analysis
         start: Beginning value for the design variable
         stop: Final value for the design variable
         center: Center point for a range of values that you want to sweep
         span:
             Range of values that you want to sweep around the center point.
-            For example, if n_center is 100 and n_span is 20 then the sweep range extends from 90 to 110.
+            For example, if `center` is 100 and `span` is 20 then the sweep range extends from 90 to 110.
         step:
             Increment by which the value of the design variable changes.
-            For example, if n_start is 1.
-            0, n_stop is 2.
-            1, and f_step is 0.
-            2, the parametric analyzer simulates at values 1.
-            0, 1.
-            2, 1.
-            4, 1.
-            6, 1.
-            8, and 2.
-            0.
+            For example, if `start` is 1.0, `stop` is 2.1, and f_step is 0.2, the parametric analyzer simulates at values 1.0, 1.2, 1.4, 1.6, 1.8, and 2.0.
         lin:
             The number of steps in the analysis.
             The parametric analyzer automatically assigns equal intervals between the steps.
-            With this option, there is always a simulation at both n_start and n_stop.
-            The value for the n_lin argument must be an integer greater than 0.
-            For example, if n_start is 0.
-            5, n_stop is 2.
-            0, and n_lin is 4, the parametric analyzer simulates at values 0.
-            5, 1.
-            0, 1.
-            5, and 2.
-            0.
+            With this option, there is always a simulation at both `start` and `stop`.
+            The value for the `lin` argument must be an integer greater than 0.
+            For example, if `start` is 0.5, `stop` is 2.0, and `lin` is 4, the parametric analyzer simulates at values 0.5, 1.0, 1.5, and 2.0.
         log:
-            The number of steps between the starting and stopping points at equal-ratio intervals using the following formula:
-
-log multiplier = (n_stop/n_start)(n_log -1)The number of steps can be any positive number, such as 0.
-            5, 2, or 6.
-            25.
+            The number of steps between the starting and stopping points at equal-ratio intervals using the following formula: log multiplier = `(stop / start)**(log - 1)`.
+            The number of steps can be any positive number, such as 0.5, 2, or 6.25.
             Default value: 5
 
-For example, if n_start is 3, n_stop is 15, and n_log is 5, the parametric analyzer simulates at values 3, 4.
-            48605, 6.
-            7082, 10.
-            0311, and 15.
+            For example, if `start` is 3, `stop` is 15, and `log` is 5, the parametric analyzer simulates at values 3, 4.48605, 6.7082, 10.0311, and 15.
             The ratios of consecutive values are equal, as shown below.
-            3/4.
-            48605 = 4.
-            48605/6.
-            7082 = 6.
-            7082/10.
-            0311 = 10.
-            0311/15 =.
-            67.
+            3/4.48605 = 4.48605/6.7082 = 6.7082/10.0311 = 10.0311/15 = 0.67.
         dec:
-            The number of steps between the starting and stopping points calculated using the following formula:
-
-decade multiplier = 10 1/n_dec
-
-The number of steps can be any positive number, such as 0.
-            5, 2, or 6.
-            25.
+            The number of steps between the starting and stopping points calculated using the following formula: decade multiplier = `10 ^ (1 / dec)`.
+            The number of steps can be any positive number, such as 0.5, 2, or 6.25.
             Default value: 5
 
-For example, if n_start is 1, n_stop is 10, and n_dec is 5, the parametric analyzer simulates at values 1, 1.
-            58489, 2.
-            51189, 3.
-            98107, 6.
-            30957, and 10.
-            The values are 100, 10.
-            2, 10.
-            4, 10.
-            6, 10.
-            8, and 101.
+            For example, if `start` is 1, `stop` is 10, and `dec` is 5, the parametric analyzer simulates at values 1, 1.58489, 2.51189, 3.98107, 6.30957, and 10.
+            The values are `10^0`, `10^0.2`, `10^0.4`, `10^0.6`, `10^0.8`, and `10^1`.
         oct:
-            The number of steps between the starting and stopping points using the following formula:
-
-The number of steps can be any positive number, such as 0.
-            5, 2, or 6.
-            25.
+            The number of steps between the starting and stopping points using the following formula: `octave?multiplier = 2 ^ (1 / oct)`.
+            The number of steps can be any positive number, such as 0.5, 2, or 6.25.
             Default value: 5
 
-For example, if n_start is 2, n_stop is 4, and n_oct is 5, the parametric analyzer simulates at values 2, 2.
-            2974, 2.
-            63902, 3.
-            03143, 3.
-            4822, and 4.
-            These values are 21, 21.
-            2, 21.
-            4, 21.
-            6, 21.
-            8, and 22.
+            For example, if `start` is 2, `stop` is 4, and `oct` is 5, the parametric analyzer simulates at values 2, 2.2974, 2.63902, 3.03143, 3.4822, and 4.
+            These values are `2^1`, `2^1.2`, `2^1.4`, `2^1.6`, `2^1.8`, and `2^2`.
         times:
             A multiplier.
-            The parametric analyzer simulates at the points between n_start and n_stop that are consecutive multiples of n_times.
-            For example, if n_start is 1, n_stop is 1000, and n_times is 2, the parametric analyzer simulates at values 1, 2, 4, 8, 16, 32, 64, 128, 256, and 512.
+            The parametric analyzer simulates at the points between `start` and `stop` that are consecutive multiples of `times`.
+
+            For example, if `start` is 1, `stop` is 1000, and `times` is 2, the parametric analyzer simulates at values 1, 2, 4, 8, 16, 32, 64, 128, 256, and 512.
         span_percent:
             Range specified as a percentage of the center value.
-            For example, if n_center is 100 and n_spanPercent is 40, the sweep range extends from 80 to 120.
+            For example, if `center` is 100 and `span_percent` is 40, the sweep range extends from 80 to 120.
         sweep_type:
             Type of parametric analysis.
+
             Valid values are:
-
-
-paramset - Runs Parametric Set analysis, specific to Spectre.
-            nil - Runs Sweeps & Ranges type parametric analysis.
-            Default value: nil.
+                paramset - Runs Parametric Set analysis, specific to Spectre.
+                None - Runs Sweeps & Ranges type parametric analysis.
+            Default value: None.
         values:
             List of values to be swept.
-            You can use l_values by itself or in conjunction with n_start, n_stop, and f_step to specify the set of values to sweep.
-        param_analysis: Value returned from another paramAnalysis call used to achieve multidimensional parametric analysis
+            You can use `values` by itself or in conjunction with `start`, `stop`, and `step` to specify the set of values to sweep.
 
     Returns:
         undefined: The return value for this command is undefined
-        nil: Returns nil and prints an error message if there are problems setting the option
+
+    Raises:
+        ValueError: There are problems setting the option.
     """
-    raise NotImplementedError
+    if param_analysis_ret is None:
+        ret = ws['paramAnalysis'](des_var, **kwargs)
+    else:
+        ret = ws['paramAnalysis'](des_var, param_analysis_ret, **kwargs)
+
+    if ret is None:
+        raise ValueError('There are problems setting the option.')
+
+    return ret
 
 
-def param_run():
+def param_run(param_analysis_ret: None = None, **kwargs):
     """Runs the specified parametric analysis.
 
+    If you do not specify a parametric analysis, all specified analyses are run.
+    Distributed processing must be enabled using the hostmode command before parametric analyses can be run in distributed mode.
+
+    When the :func:`param_run()` command finishes, the PSF directory contains a file named `runObjFile` that points to a family of data.
+    To plot the family, use a normal plot command. 
+    For example, you might use `plot(v("/out"))`.
+
     Args:
-        param_analysis: Parametric analysis
+        param_analysis_ret: Parametric analysis
         job_name:
             Used as the basis of the job name.
             The value entered for t_jobName is used as the job name and return value if the run command is successful.
@@ -160,7 +128,17 @@ def param_run():
             It is effective only in the LSF mode.
 
     Returns:
-        t: Returned if successful
-        nil: Returns nil and prints an error message if unsuccessful
+        bool: True, if successful
+
+    Raises:
+        ValueError: Unsuccessful run.
     """
-    raise NotImplementedError
+    if param_analysis_ret is None:
+        ret = ws['paramRun'](**kwargs)
+    else:
+        ret = ws['paramRun'](param_analysis_ret, **kwargs)
+
+    if ret is None:
+        raise ValueError('Unsuccessful run.')
+
+    return ret

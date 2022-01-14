@@ -1,3 +1,5 @@
+from ocean.waveform import *
+
 def abs():
     """Returns the absolute value of a floating-point number or integer.
 
@@ -865,7 +867,7 @@ Boolean indicating when to close the contours.
     raise NotImplementedError
 
 
-def cross():
+def cross(waveform : LocalWaveform, cross_val, n, cross_type):
     """Computes the X-axis value at which a particular crossing of the specified edge type of the threshold value occurs.
 
     Args:
@@ -897,7 +899,7 @@ def cross():
         value: Returns the X-axis value of the crossing point if the input argument is a single waveform
         nil: Returns nil and an error message otherwise
     """
-    raise NotImplementedError
+    return ws['cross'](waveform, cross_val, n, cross_type)
 
 
 def db10():
@@ -3291,7 +3293,7 @@ def rshift():
     raise NotImplementedError
 
 
-def sample():
+def sample(waveform, start, stop, type, step):
     """Samples a waveform at the specified interval.
 
     Args:
@@ -3311,7 +3313,7 @@ def sample():
         number: Returns a number if the output contains only one point
         nil: Returns nil and an error message otherwise
     """
-    raise NotImplementedError
+    return RemoteWaveform(ws['sample'](waveform, start, stop, type, step))
 
 
 def settling_time():

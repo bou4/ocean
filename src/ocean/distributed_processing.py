@@ -1,3 +1,7 @@
+from ocean.workspace import ws
+from ocean.symbol import *
+
+
 def delete_job():
     """Removes a job or series of jobs from the text-based job monitor.
 
@@ -41,22 +45,24 @@ def digital_host_name():
     raise NotImplementedError
 
 
-def host_mode():
+def host_mode(value):
     """Sets the simulation host mode.
 
     Args:
-        'local: Sets the simulation to run locally on the user's machine
-        'remote:
-            Sets the simulation to run on a remote host queue.
-            For this release, the remote host is specified in the.
-            cdsenv file.
-        'distributed: Sets the simulation to run using the distributed processing software
+        `value` can be any member of :obj:`HostMode`.
 
     Returns:
-        t: Returns t if successful
-        nil: Returns nil and prints an error message if unsuccessful
+        bool: True, if successful.
+
+    Raises:
+        ValueError: Unsuccessful.
     """
-    raise NotImplementedError
+    ret = ws['hostMode'](value)
+
+    if ret is None:
+        raise ValueError('Unsuccessful.')
+
+    return ret
 
 
 def host_name():
@@ -146,20 +152,38 @@ def suspend_job():
     raise NotImplementedError
 
 
-def wait():
+def wait(job_names: str | list[str], queue: str = None) -> bool:
     """Postpones processing of a script until the specified jobs complete.
 
     This command is ignored if distributed processing is not available.
 
+    The wait command is highly useful when you use the non-blocking mode of distributed processing and you want to do some post-processing,
+    such as selecting and viewing results after a job is completed.
+    The :func:`wait()` command is not required when you use the blocking mode of distributed processing.
+    To know more abou tblocking and non-blocking modes of DP, refer to Virtuoso Analog Distributed Processing Option User Guide.
+
     Args:
-        queue: The name of queue on which job launched by wait is submitted
-        job_name:
-            Name used to identify the job.
+        queue: The name of queue on which job launched by func:`wait()` is submitted.
+        job_names (list):
+            List of names used to identify the jobs.
             The job name is user defined or system generated, depending on how the user submitted the job.
-        job_name2...t_jobname_n: Additional jobs that you want to postpone
 
     Returns:
-        t: Returns t if successful
-        nil: Returns nil and prints an error message if unsuccessful
+        bool: True, if successful
+
+    Raise:
+        ValueError: Unsuccessful.
     """
-    raise NotImplementedError
+    args = []
+
+    if queue is not None:
+        args += [Key('queue'), queue]
+
+    args += list(job_names)
+
+    ret = ws['wait'](*args)
+
+    if ret is None:
+        raise ValueError('Unsuccessful.')
+
+    return ret

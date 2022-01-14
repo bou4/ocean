@@ -1,5 +1,6 @@
-# Ocean reference manual
+# Cadence documentation
 /docs/oceanref/
+/docs/skartistref/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

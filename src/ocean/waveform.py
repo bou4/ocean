@@ -42,11 +42,17 @@ class LocalWaveform(Waveform):
     def __iter__(self):
         return iter((self.x, self.y))
 
+    def __call__(self, x):
+        return np.interp(x, self.x, self.y)
+
     def xprefix(self, prefix: Prefix) -> 'LocalWaveform':
         return LocalWaveform(self.x / prefix.value, self.y)
 
     def yprefix(self, prefix: Prefix) -> 'LocalWaveform':
         return LocalWaveform(self.x, self.y / prefix.value)
+    
+    def inverse(self) -> 'LocalWaveform':
+        return LocalWaveform(self.y, self.x)
 
 
 class RemoteWaveform(Waveform):

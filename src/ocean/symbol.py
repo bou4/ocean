@@ -18,6 +18,8 @@ class AnalysisType(SymbolEnum):
     envlp = Symbol('envlp')
     ac = Symbol('ac')
     dc = Symbol('dc')
+    dc_op = Symbol('dcOp')
+    dc_op_info = Symbol('dcOpInfo')
     noise = Symbol('noise')
     xf = Symbol('xf')
     sp = Symbol('sp')
@@ -75,3 +77,14 @@ class Simulator(SymbolEnum):
     hspiceD = Symbol('hspiceD')
     spectre = Symbol('spectre')
     UltraSim = Symbol('UltraSim')
+
+
+class HostMode(SymbolEnum):
+    """Host mode"""
+    #: Sets the simulation to run locally on the user's machine.
+    local = Symbol('local')
+    #: Sets the simulation to run on a remote host queue.
+    #  For this release, the remote host is specified in the cdsenv file.
+    remote = Symbol('remote')
+    #: Sets the simulation to run using the distributed processing software.
+    distributed = Symbol('distributed')

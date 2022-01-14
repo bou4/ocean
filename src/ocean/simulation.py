@@ -861,18 +861,30 @@ def save(save_type: SaveType = None, save_names: list[str] = None, categ: Categ 
     return ret
 
 
-def save_op_point():
+def save_op_point(inst_name: str, operating_points: list = None):
     """Specifies the operating point parameters to be saved for a given instance.
 
     Args:
-        inst_name: Name of the instance for which the parameters are to be saved
-        operating_points: List of the operating point parameters
+        inst_name (str): Name of the instance for which the parameters are to be saved.
+        operating_points (list, optional): List of the operating point parameters.
 
     Returns:
-        t: Returns t when the function runs successfully
-        nil: Returns nil if there is an error
+        bool: True when the function runs successfully.
+    
+    Raises:
+        ValueError: There is an error.
     """
-    raise NotImplementedError
+    args = [inst_name]
+
+    if operating_points is not None:
+        args += [Key('operatingPoints'), ' '.join(operating_points)]
+
+    ret = ws['saveOpPoint'](*args)
+
+    if ret is None:
+        raise ValueError('There is an error.')
+
+    return ret
 
 
 def save_option():

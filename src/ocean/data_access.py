@@ -1,5 +1,6 @@
 from ocean.workspace import ws
-from ocean.waveform import RemoteWaveform
+from ocean.waveform import *
+from ocean.family import *
 from ocean.symbol import *
 
 
@@ -42,7 +43,7 @@ def display_subckt():
     raise NotImplementedError
 
 
-def get_data(name: str, result_name: AnalysisType = None, results_directory: str = None) -> float | RemoteWaveform:
+def get_data(name: str, result_name: AnalysisType = None, results_directory: str = None) -> float | Family | RemoteWaveform:
     """Returns the number or waveform for the signal name specified.
 
     The type of value returned depends on how the command is used.
@@ -64,7 +65,7 @@ def get_data(name: str, result_name: AnalysisType = None, results_directory: str
             An integer simulation result or a :obj:`RemoteWaveform` object.
             A :obj:`RemoteWaveform` object represents simulation results that can be displayed as a series of points on a grid.
             (A waveform object identifier looks like this: srrWave:XXXXX.).
-    
+
     Raises:
         ValueError: The value cannot be returned.
     """
@@ -83,6 +84,8 @@ def get_data(name: str, result_name: AnalysisType = None, results_directory: str
 
     if isinstance(ret, float):
         return ret
+    elif fam_is_family(ret):
+        return Family(ret)
     else:
         return RemoteWaveform(ret)
 
@@ -167,7 +170,7 @@ def ocn_reset_results():
     raise NotImplementedError
 
 
-def open_results(arg: str | Symbol = None, enable_calc_expressions: bool = None) -> str:
+def open_results(arg: str | Symbol | AnalysisType = None, enable_calc_expressions: bool = None) -> str:
     """Refer to the documentation of :func:`open_job()`, and :func:`open_dir()`.
 
     All function signatures can be used when calling :func:`open_results()`.
@@ -177,7 +180,7 @@ def open_results(arg: str | Symbol = None, enable_calc_expressions: bool = None)
     """
     if arg is None:
         ret = open_query()
-    if isinstance(arg, Symbol):
+    if isinstance(arg, Symbol) or isinstance(arg, AnalysisType):
         ret = open_job(arg)
     elif isinstance(arg, str):
         ret = open_dir(arg, enable_calc_expressions)
@@ -487,47 +490,77 @@ def sprobe_data():
     raise NotImplementedError
 
 
-def sweep_names():
-    """Returns the names of all the sweep variables for either a supplied waveform, a currently selected result (via selectResult()) or a specified result.
+def sweep_names(waveform: RemoteWaveform = None, result: str = None, results_dir: str = None) -> list[str]:
+    """Returns the names of all the sweep variables for either a supplied waveform, a currently selected result (via :func:`select_result()`) or a specified result.
 
     Args:
-        wave_form:
+        waveform:
             Waveform object representing simulation results that can be displayed as a series of points on a grid.
             (A waveform object identifier looks like this: srrWave:XXXXX).
-            When this argument is used, the t_resultsDir and s_resultName arguments are ignored.
+            When this argument is used, the `results_dir` and `result_name` arguments are ignored.
         result:
             Results from an analysis.
-            When specified, this argument will only be used internally and will not alter the current result which was set by the selectResult command.
-            The default is the current result selected with the selectResult command.
+            When specified, this argument will only be used internally and will not alter the current result which was set by the :func:`select_result()` command.
+            The default is the current result selected with the :func:`select_result()` command.
         results_dir:
             Directory containing the PSF files (results).
-            If you supply this argument, you must also supply the resultName argument.
-            When specified, this argument will only be used internally and will not alter the current results directory which was set by the openResults command.
-            The default is the current results directory set by the openResults command.
+            If you supply this argument, you must also supply the `result_name` argument.
+            When specified, this argument will only be used internally and will not alter the current results directory which was set by the :func:`open_results()` command.
+            The default is the current results directory set by the :func:`open_results()` command.
 
     Returns:
-        sweep_name: Returns a list of the sweep names
-        nil: Returns nil and prints an error message if the sweep names cannot be returned
+        list: Returns a list of the sweep names
+
+    Raises:
+        ValueError: The sweep names cannot be returned.
     """
-    raise NotImplementedError
+    ret = None
+
+    args = []
+
+    if waveform is not None:
+        args += [waveform]
+    elif result is not None:
+        args += [result]
+
+        if results_dir is not None:
+            args += [results_dir]
+
+    ret = ws['sweepNames'](*args)
+
+    if ret is None:
+        raise ValueError('The sweep names cannot be returned.')
+
+    return ret
 
 
-def sweep_values():
+def sweep_values(waveform: RemoteWaveform = None):
     """Returns the list of sweep values of the outermost sweep variable of either the selected results or the supplied waveform.
 
     This command is particularly useful for parametric analyses.
 
     Args:
-        wave_form:
+        waveform:
             Waveform object representing simulation results that can be displayed as a series of points on a grid.
-            (A waveform object identifier looks like this: srrWave:XXXXX.
-            ).
+            (A waveform object identifier looks like this: srrWave:XXXXX.).
 
     Returns:
-        sweep_values: Returns the list of sweep values
-        nil: Returns nil and an error message if the list of sweep values cannot be returned
+        list: Returns the list of sweep values.
+
+    Raises:
+        ValueError: The list of sweep values cannot be returned.
     """
-    raise NotImplementedError
+    args = []
+
+    if waveform is not None:
+        args += [waveform]
+
+    ret = ws['sweepValues'](*args)
+
+    if ret is None:
+        raise ValueError('The list of sweep values cannot be returned.')
+
+    return ret
 
 
 def sweep_var_values():
